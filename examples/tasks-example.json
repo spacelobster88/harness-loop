@@ -1,0 +1,152 @@
+{
+  "metadata": {
+    "project_name": "todo-app",
+    "created_at": "2026-03-02T10:00:00Z",
+    "updated_at": "2026-03-02T14:30:00Z",
+    "current_phase": "engineering",
+    "telegram_chat_id": "",
+    "telegram_bot_token_env": "HARNESS_TG_TOKEN"
+  },
+  "tasks": [
+    {
+      "id": "arch-1",
+      "title": "Design API schema and data models",
+      "description": "Define REST API endpoints for CRUD operations on todos. Design the database schema with fields: id, title, description, completed, created_at, updated_at.",
+      "phase": "architecture",
+      "status": "done",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "API endpoints documented in docs/api.md with request/response examples",
+        "Database schema defined in docs/schema.md with field types and constraints"
+      ],
+      "output_files": ["docs/api.md", "docs/schema.md"],
+      "retry_count": 0,
+      "started_at": "2026-03-02T10:05:00Z",
+      "completed_at": "2026-03-02T10:25:00Z",
+      "notes": null
+    },
+    {
+      "id": "arch-2",
+      "title": "Define project structure and tech stack",
+      "description": "Choose framework (Express + SQLite), define directory layout, establish coding conventions.",
+      "phase": "architecture",
+      "status": "done",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "docs/architecture.md exists with directory tree and tech decisions",
+        "Package.json created with dependencies listed"
+      ],
+      "output_files": ["docs/architecture.md"],
+      "retry_count": 0,
+      "started_at": "2026-03-02T10:05:00Z",
+      "completed_at": "2026-03-02T10:20:00Z",
+      "notes": null
+    },
+    {
+      "id": "uiux-1",
+      "title": "Design todo list UI components",
+      "description": "Create wireframes for the main todo list view, add/edit forms, and filter controls.",
+      "phase": "uiux",
+      "status": "done",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "ASCII wireframes in docs/wireframes.md for list view, add form, edit form",
+        "Component hierarchy documented"
+      ],
+      "output_files": ["docs/wireframes.md"],
+      "retry_count": 0,
+      "started_at": "2026-03-02T10:05:00Z",
+      "completed_at": "2026-03-02T10:30:00Z",
+      "notes": null
+    },
+    {
+      "id": "eng-1",
+      "title": "Implement database layer",
+      "description": "Set up SQLite database with migrations. Implement the Todo model with CRUD operations.",
+      "phase": "engineering",
+      "status": "done",
+      "dependencies": ["arch-1", "arch-2"],
+      "acceptance_criteria": [
+        "src/db.ts creates SQLite connection and runs migrations",
+        "src/models/todo.ts exports create, read, update, delete functions",
+        "Database file created at data/todos.db on first run"
+      ],
+      "output_files": ["src/db.ts", "src/models/todo.ts"],
+      "retry_count": 0,
+      "started_at": "2026-03-02T10:30:00Z",
+      "completed_at": "2026-03-02T11:00:00Z",
+      "notes": null
+    },
+    {
+      "id": "eng-2",
+      "title": "Implement API routes",
+      "description": "Create Express routes for all todo CRUD endpoints following the API schema.",
+      "phase": "engineering",
+      "status": "in_progress",
+      "dependencies": ["arch-1", "eng-1"],
+      "acceptance_criteria": [
+        "src/routes/todos.ts implements GET/POST/PUT/DELETE endpoints",
+        "Input validation on POST and PUT",
+        "Proper HTTP status codes (201 for create, 404 for not found)"
+      ],
+      "output_files": ["src/routes/todos.ts", "src/app.ts"],
+      "retry_count": 0,
+      "started_at": "2026-03-02T11:05:00Z",
+      "completed_at": null,
+      "notes": null
+    },
+    {
+      "id": "eng-3",
+      "title": "Implement frontend components",
+      "description": "Build React components for the todo list UI following the wireframes.",
+      "phase": "engineering",
+      "status": "pending",
+      "dependencies": ["uiux-1", "eng-2"],
+      "acceptance_criteria": [
+        "src/components/TodoList.tsx renders list of todos",
+        "src/components/TodoForm.tsx handles add and edit",
+        "src/components/TodoFilter.tsx provides filter controls"
+      ],
+      "output_files": ["src/components/TodoList.tsx", "src/components/TodoForm.tsx", "src/components/TodoFilter.tsx"],
+      "retry_count": 0,
+      "started_at": null,
+      "completed_at": null,
+      "notes": null
+    },
+    {
+      "id": "qa-1",
+      "title": "Test API endpoints",
+      "description": "Write integration tests for all API endpoints. Cover happy paths and error cases.",
+      "phase": "qa",
+      "status": "pending",
+      "dependencies": ["eng-2"],
+      "acceptance_criteria": [
+        "tests/api.test.ts covers all CRUD endpoints",
+        "Tests for 404 on missing todo, 400 on invalid input",
+        "All tests pass"
+      ],
+      "output_files": ["tests/api.test.ts"],
+      "retry_count": 0,
+      "started_at": null,
+      "completed_at": null,
+      "notes": null
+    },
+    {
+      "id": "qa-2",
+      "title": "Test frontend components",
+      "description": "Write unit tests for React components using Testing Library.",
+      "phase": "qa",
+      "status": "pending",
+      "dependencies": ["eng-3"],
+      "acceptance_criteria": [
+        "tests/components.test.tsx tests render, add, edit, delete, filter",
+        "All tests pass"
+      ],
+      "output_files": ["tests/components.test.tsx"],
+      "retry_count": 0,
+      "started_at": null,
+      "completed_at": null,
+      "notes": null
+    }
+  ]
+}

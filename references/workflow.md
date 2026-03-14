@@ -8,6 +8,13 @@ Each phase has entry conditions, actions, and exit conditions.
 - **Entry**: No `.harness/requirements.md` content, or user requests re-scoping
 - **Actions**: Interactive Q&A with user, capture in requirements.md
 - **Exit**: User approves requirements summary
+- **Next**: Design Brainstorming
+
+### Design Brainstorming Phase
+- **Entry**: Requirements approved
+- **Actions**: Explore codebase context, propose 2-3 approaches with trade-offs, write `.harness/design.md`
+- **Exit**: User explicitly approves the design ("looks good", "approved", etc.)
+- **HARD GATE**: No task decomposition or implementation until design is approved
 - **Next**: Task Decomposition → Architecture
 
 ### Architecture Phase

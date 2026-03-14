@@ -59,6 +59,34 @@ When running via a Telegram bot (indicated by `[TELEGRAM_BOT_MODE]` in the injec
 
 If `[TELEGRAM_BOT_MODE]` is NOT present in the context, follow the normal interactive flow (Steps 1-4 as written).
 
+## Telegram Bot Mode Execute Loop
+
+When running in Telegram Bot Mode (background phase), the Execute Loop operates differently to keep the foreground chat free and enable real-time `/status` tracking:
+
+**One batch per invocation, then EXIT.** Each background `claude -p --continue` call executes ONE batch of tasks, then exits with a structured marker. The Python backend parses the marker and auto-chains the next invocation. This keeps each invocation short and the foreground responsive.
+
+### Rules
+
+1. **Execute ONE batch per iteration** — find ready tasks, dispatch, collect results, update `tasks.json`, then EXIT with a marker (see below). Do NOT loop back to step 1.
+2. **Subagents run INLINE** — since you're already in a background process, do NOT use `run_in_background: true`. Dispatch subagents normally (foreground). The skill's `run_in_background` does not work in `-p` pipe mode.
+3. **No user interaction expected** — you are in a background process. Do not ask the user questions. If a task is blocked, exit with `[HARNESS_BLOCKED]`.
+4. **All other rules still apply** — Centurion check, memory guardrails, retry/review within the batch, TDD protocol, code review for eng/qa tasks.
+5. **Progressive ramp-up persists across invocations** — store `previous_batch_size` in `.harness/config.json` so each chained invocation can read the ramp-up state from the previous batch. Read it at the start, write it before exiting.
+
+### Exit Markers
+
+Output one of these markers as the **last line** of your response:
+
+- `[HARNESS_BATCH_DONE:phase_name:done_count/total_count]` — batch completed, more tasks remain. Example: `[HARNESS_BATCH_DONE:engineering:5/12]`
+- `[HARNESS_BLOCKED:task_id:reason]` — a task needs user input. Example: `[HARNESS_BLOCKED:eng-3:API key not configured]`
+- `[HARNESS_COMPLETE]` — all tasks done (output after generating the final report)
+
+The backend will:
+- On `BATCH_DONE`: send a short progress message to Telegram, then auto-chain the next batch invocation
+- On `BLOCKED`: send a notification to Telegram, stop chaining
+- On `COMPLETE`: send a notification, stop chaining
+- On no marker: treat as a normal response (send full result to Telegram, no chaining)
+
 ## Telegram Progress Notifications
 
 Send notifications at **phase boundaries** (not per-task). Use:
@@ -272,7 +300,7 @@ LOOP:
   6. If batch has 1 task:
      - Set status → "in_progress", write tasks.json
      - Read references/role-prompts.md for the task's phase
-     - Dispatch via Agent tool with run_in_background: true
+     - Dispatch via Agent tool with run_in_background: true (In Telegram Bot Mode: dispatch INLINE, no run_in_background)
      - Tell the user: "Working on {task.id}: {title}. You can chat with me while it runs."
      - When the background agent completes, collect its result
      - Verify acceptance criteria
@@ -282,7 +310,7 @@ LOOP:
   7. If batch has 2+ tasks:
      - Set all to "in_progress", write tasks.json
      - Read references/role-prompts.md for the tasks' phase
-     - Dispatch via Agent tool with run_in_background: true — one subagent per task, ALL in a single message
+     - Dispatch via Agent tool with run_in_background: true — one subagent per task, ALL in a single message (In Telegram Bot Mode: dispatch INLINE, no run_in_background)
      - Tell the user: "Dispatched {n} tasks in parallel: {id1}, {id2}, ... You can chat with me while they run."
      - Each subagent receives: task description, acceptance criteria, output files, role prompt
      - Each subagent returns: {status, output_files, notes}
@@ -323,7 +351,8 @@ TASK_FAILED:
       - Else → stale_count = 0
   11. iteration += 1
       If iteration >= MAX_ITERATIONS → report to user, BREAK
-  12. Go to step 1
+  12. In Telegram Bot Mode: do NOT loop. Exit with the appropriate marker after one batch.
+      In normal mode: Go to step 1
 
 COMPLETE:
   - Set metadata.current_phase → "complete"

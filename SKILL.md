@@ -222,17 +222,26 @@ Then confirm to user: "Worker started. You'll receive Telegram notifications. Us
    - If criteria appear met → mark `done`
    - If not → reset to `pending`
 4. Report current state to user: phases completed, tasks remaining, any blocked tasks
-5. Ask user: continue in interactive or background mode?
+5. **If `[TELEGRAM_BOT_MODE]` is present:** Do NOT ask about mode. Output a status summary (phases, done/total, blocked tasks), then output `[HARNESS_EXEC_READY]` at the END of your response. The bot will gate for user confirmation and start background execution automatically.
+6. **If NOT in Telegram Bot Mode:** Ask user: continue in interactive or background mode?
+
+## Historical Project Archive
+
+Completed or expired harness projects are archived to `~/.claude-gateway-archives/`. Each archive has a UUID and contains the full `.harness/` directory (tasks.json, progress.md, config.json, requirements.md, design.md, reports/).
+
+- **Index file:** `~/.claude-gateway-archives/index.json` — lists all archived projects with UUID, project_name, chat_id, archived_at, status (complete/incomplete), and task counts.
+- **Archive contents:** `~/.claude-gateway-archives/{uuid}/.harness/` — full snapshot of the project's harness state at the time of archival.
+
+When referencing past work or looking up historical project data, read the index file first, then access the specific archive by UUID.
 
 ## Execute Loop
 
-**PRE-FLIGHT CHECK**: Before entering the loop, verify Centurion is running:
-```bash
-curl -s --connect-timeout 2 --max-time 3 http://localhost:${CENTURION_PORT:-8100}/api/centurion/hardware
-```
-If this fails (connection refused, timeout, or non-JSON response), **do NOT start the loop**. Tell the user: "Centurion is required for subagent scheduling. Please start Centurion first." This is a hard gate — no fallback to vm_stat/memory_pressure.
+**PRE-FLIGHT CHECK**: Before entering the loop, verify Centurion resource data is available. Centurion operates in two modes:
 
-**Note:** When running via Telegram Bot Mode, Centurion status is automatically injected into the context by the bot. Check the `[Centurion Status]` section in the injected context for current resource availability.
+- **Headless mode (primary, Telegram Bot Mode):** The backend pre-queries Centurion and injects `[Centurion Status]` into your context. Look for this block in your injected context. If present, use those values directly — do NOT run curl.
+- **Interactive mode (secondary, local):** If no `[Centurion Status]` block is in your context, query Centurion yourself via curl.
+
+If neither source provides Centurion data, **do NOT start the loop**. Tell the user: "Centurion is required for subagent scheduling. Please start Centurion first."
 
 This is the core harness loop. Follow this algorithm precisely:
 
@@ -252,10 +261,17 @@ STATE:
 LOOP:
   0. Memory checkpoint via Centurion (run BEFORE every iteration):
      **MANDATORY**: All subagent scheduling MUST go through Centurion. Do NOT use vm_stat
-     or memory_pressure as fallbacks. If Centurion is not running, do NOT proceed — tell
-     the user to start Centurion first.
+     or memory_pressure as fallbacks.
 
-     a. Query Centurion for resource state:
+     a. Obtain Centurion resource state (choose ONE path):
+
+        **Path 1 — Headless (check context first):**
+        If your context contains a `[Centurion Status]` block (injected by the bot backend),
+        parse `recommended_max_agents`, `active_agents`, and `memory_pressure` from it.
+        Skip curl — the data is already available.
+
+        **Path 2 — Interactive (curl fallback):**
+        If NO `[Centurion Status]` block is in your context, query directly:
         ```bash
         curl -s --connect-timeout 2 --max-time 3 \
           http://localhost:${CENTURION_PORT:-8100}/api/centurion/hardware
@@ -267,18 +283,18 @@ LOOP:
           Please start Centurion before continuing."
           BREAK — do NOT fall back to vm_stat or memory_pressure.
 
-        - If curl **succeeds** (exit 0, valid JSON): use the response fields:
-          - `recommended_max_agents` and `allocated.active_agents` → compute max_batch_size as:
-            max_batch_size = max(1, recommended_max_agents - active_agents)
-            This trusts Centurion's holistic recommendation (CPU + RAM + load) directly,
-            instead of applying a separate RAM formula.
-          - `system.memory_pressure` → use as a safety override:
-            - "normal": no action
-            - "warn": set max_batch_size = min(max_batch_size, 2)
-            - "critical": set max_batch_size = 1, write .harness/signals/memory_pause,
-              log "Critical memory pressure — pausing loop for 60s", sleep 60s,
-              re-query Centurion. If still critical, BREAK with message to user.
-              Otherwise, remove .harness/signals/memory_pause and continue.
+     b. Using the Centurion data (from either path):
+        - `recommended_max_agents` and `active_agents` → compute max_batch_size as:
+          max_batch_size = max(1, recommended_max_agents - active_agents)
+          This trusts Centurion's holistic recommendation (CPU + RAM + load) directly,
+          instead of applying a separate RAM formula.
+        - `memory_pressure` → use as a safety override:
+          - "normal": no action
+          - "warn": set max_batch_size = min(max_batch_size, 2)
+          - "critical": set max_batch_size = 1, write .harness/signals/memory_pause,
+            log "Critical memory pressure — pausing loop for 60s", sleep 60s,
+            re-query Centurion. If still critical, BREAK with message to user.
+            Otherwise, remove .harness/signals/memory_pause and continue.
         Configure the port via `CENTURION_PORT` env var (default: 8100).
 
   1. Read .harness/tasks.json

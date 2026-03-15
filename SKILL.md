@@ -75,17 +75,27 @@ When running in Telegram Bot Mode (background phase), the Execute Loop operates 
 
 ### Exit Markers
 
-Output one of these markers as the **last line** of your response:
+**CRITICAL: You MUST output exactly one of these markers as the VERY LAST LINE of your response. If you omit the marker, the batch chain STOPS SILENTLY and the entire harness loop stalls. No marker = no next batch. This is the #1 cause of harness loop stalls.**
 
 - `[HARNESS_BATCH_DONE:phase_name:done_count/total_count]` — batch completed, more tasks remain. Example: `[HARNESS_BATCH_DONE:engineering:5/12]`
 - `[HARNESS_BLOCKED:task_id:reason]` — a task needs user input. Example: `[HARNESS_BLOCKED:eng-3:API key not configured]`
 - `[HARNESS_COMPLETE]` — all tasks done (output after generating the final report)
 
+**The marker MUST be the last line, on its own line, with no trailing text or whitespace after it.** Example of correct output:
+
+```
+Updated tasks.json: eng-3 done, eng-4 done. Phase engineering: 5/12 complete.
+
+[HARNESS_BATCH_DONE:engineering:5/12]
+```
+
+Do NOT wrap the marker in markdown code blocks, explanatory text, or summaries after it. The backend uses regex to find the marker — anything after it may prevent detection.
+
 The backend will:
 - On `BATCH_DONE`: send a short progress message to Telegram, then auto-chain the next batch invocation
 - On `BLOCKED`: send a notification to Telegram, stop chaining
 - On `COMPLETE`: send a notification, stop chaining
-- On no marker: treat as a normal response (send full result to Telegram, no chaining)
+- On no marker: send a warning that the loop may have stalled (no chaining occurs)
 
 ## Telegram Progress Notifications
 

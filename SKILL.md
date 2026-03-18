@@ -260,13 +260,13 @@ CONSTANTS:
   MAX_RETRIES = 3
   MAX_STALE_ROUNDS = 2
   MAX_ITERATIONS = 50
-  MAX_PARALLEL = 4
+  MAX_PARALLEL = dynamic     # computed from Centurion in Step 0b
 
 STATE:
   stale_count = 0
   iteration = 0
   max_batch_size = 8
-  previous_batch_size = 1    # progressive ramp-up tracker (starts at 1)
+  previous_batch_size = 3    # progressive ramp-up tracker (starts at 3 for faster warm-up)
 
 LOOP:
   0. Memory checkpoint via Centurion (run BEFORE every iteration):
@@ -294,13 +294,14 @@ LOOP:
           BREAK — do NOT fall back to vm_stat or memory_pressure.
 
      b. Using the Centurion data (from either path):
-        - `recommended_max_agents` and `active_agents` → compute max_batch_size as:
+        - `recommended_max_agents` and `active_agents` → compute:
           max_batch_size = max(1, recommended_max_agents - active_agents)
-          This trusts Centurion's holistic recommendation (CPU + RAM + load) directly,
-          instead of applying a separate RAM formula.
+          MAX_PARALLEL = min(12, max(4, recommended_max_agents - active_agents - 2))
+          (Trust Centurion's recommendation, keep 2-slot safety margin,
+           floor at 4, cap at 12)
         - `memory_pressure` → use as a safety override:
           - "normal": no action
-          - "warn": set max_batch_size = min(max_batch_size, 2)
+          - "warn": set max_batch_size = min(max_batch_size, 4)
           - "critical": set max_batch_size = 1, write .harness/signals/memory_pause,
             log "Critical memory pressure — pausing loop for 60s", sleep 60s,
             re-query Centurion. If still critical, BREAK with message to user.

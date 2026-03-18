@@ -180,9 +180,16 @@ After requirements are approved:
    - Technology choices and rationale
    - Risks and mitigations
    - Rough complexity estimate
-3. **Ask ONE question at a time** if you need clarification. Do not dump a list of questions.
-4. **Present the chosen design** as a structured document and write it to `.harness/design.md`.
-5. **Get explicit user approval**: "Does this design look good? Any changes before I break it into tasks?"
+3. **UI/UX design is MANDATORY for all project types.** Even backend-only projects, CLI tools, and reports need thoughtful presentation. Determine the project's UI surface:
+   - **Full-stack web/mobile**: Page layouts, component hierarchy, responsive design
+   - **PDF reports**: Page layout, typography scale, section hierarchy, data visualization
+   - **Dashboards**: Card layout, metric presentation, navigation
+   - **CLI tools**: Output formatting, progress indicators, help text
+   - **APIs**: Developer portal design, documentation structure
+   The UI/UX phase produces design specs (not code). Read `references/role-prompts.md` for the UI/UX Agent's full design philosophy.
+4. **Ask ONE question at a time** if you need clarification. Do not dump a list of questions.
+5. **Present the chosen design** as a structured document and write it to `.harness/design.md`. The design MUST include a UI/UX section covering the visual/interaction design.
+6. **Get explicit user approval**: "Does this design look good? Any changes before I break it into tasks?"
 
 Do NOT proceed to Step 3 until the user says the design is approved. If the user says "just build it" without reviewing, remind them: "The design phase prevents expensive rework later. It takes 2 minutes to review."
 
@@ -191,11 +198,18 @@ Do NOT proceed to Step 3 until the user says the design is approved. If the user
 Generate a task DAG in `.harness/tasks.json` following these rules:
 
 1. **Phase order**: architecture → uiux → engineering → qa
-2. **Dependencies**: `eng-*` depends on relevant `arch-*` and `uiux-*`. `qa-*` depends on `eng-*`.
-3. **Task granularity**: Each task should be completable in **2-5 minutes** of agent work (1-3 loop iterations). If bigger, split it.
-4. **File isolation**: Assign `output_files` to each task. If two tasks share output files, add a dependency between them.
-5. **Acceptance criteria**: Every task must have specific, verifiable criteria.
-6. **Plan precision** (engineering and QA tasks MUST include):
+2. **The uiux phase is MANDATORY** for all projects, not just web apps. Every project has a presentation layer:
+   - Web/mobile: page layouts, component designs, responsive specs
+   - PDF reports: page layout, typography, section hierarchy, data viz design
+   - Dashboards: card layouts, metric presentation, navigation design
+   - CLI tools: output formatting, progress indicators, color scheme
+   - APIs: documentation design, developer portal layout
+   Create at least one `uiux-*` task. The UI/UX agent follows the design philosophy in `references/role-prompts.md`.
+3. **Dependencies**: `eng-*` depends on relevant `arch-*` and `uiux-*`. `qa-*` depends on `eng-*`.
+4. **Task granularity**: Each task should be completable in **2-5 minutes** of agent work (1-3 loop iterations). If bigger, split it.
+5. **File isolation**: Assign `output_files` to each task. If two tasks share output files, add a dependency between them.
+6. **Acceptance criteria**: Every task must have specific, verifiable criteria.
+7. **Plan precision** (engineering and QA tasks MUST include):
    - Exact file paths to create or modify
    - Exact test commands with expected output (e.g., `npm test -- --grep "auth" → 3 passing`)
    - Key function/class names to implement

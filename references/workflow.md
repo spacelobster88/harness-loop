@@ -63,8 +63,8 @@ Mark all tasks in that phase as `done` with `notes: "Skipped by user"`. The harn
 ### Single-task project
 The DAG can have just one task. The harness loop still works — it just completes in one iteration.
 
-### No UI project (CLI tool, backend service)
-Skip the uiux phase entirely. Engineering tasks depend only on architecture tasks.
+### Non-web projects (CLI tool, backend service, reports, dashboards)
+The uiux phase is still required — every project has a presentation layer. For CLI tools, design output formatting and progress indicators. For reports/PDFs, design page layout, typography, and data visualization. For dashboards, design card layouts and metric presentation. For APIs, design developer documentation layout. See `references/role-prompts.md` for the UI/UX Agent's full design philosophy.
 
 ### QA finds a critical bug
 This is handled **automatically** by step 7b in the Execute Loop:

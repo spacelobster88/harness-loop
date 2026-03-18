@@ -261,6 +261,8 @@ CONSTANTS:
   MAX_STALE_ROUNDS = 2
   MAX_ITERATIONS = 50
   MAX_PARALLEL = dynamic     # computed from Centurion in Step 0b
+  MAX_QA_CYCLES = 3          # per qa task: max fix-and-retest cycles
+  MAX_REWORK_TASKS = 8       # global: max eng-fix tasks created from QA feedback
 
 STATE:
   stale_count = 0
@@ -357,6 +359,42 @@ LOOP:
      - Reviewer checks: spec compliance (did it build what was asked?) + code quality (is the code good?)
      - If reviewer finds issues: dispatch implementer again with reviewer feedback
      - Max 2 review rounds. If still failing after 2 rounds, mark done with notes about remaining issues.
+
+  7b. QA Feedback Loop (qa-phase tasks ONLY — skip for eng/arch/uiux tasks):
+     After a qa task completes (passes review in 7a), check its result for bug reports:
+
+     a. Parse the QA subagent's output for structured bug reports.
+        Look for a JSON block with `"bugs": [...]` in the result.
+        Fallback: scan for lines starting with `BUG:` as free-text bugs.
+        If no bugs found (or all trivial/already fixed in place): done, continue to step 8.
+
+     b. Check convergence limits before creating any fix tasks:
+        - Read the qa task's `qa_cycle_count` (default 0). If >= MAX_QA_CYCLES (3):
+          Mark task done with notes listing remaining bugs as "known issues". Continue.
+        - Read metadata.rework_tasks_created (default 0). If >= MAX_REWORK_TASKS (8):
+          Mark task done with notes: "known issues (rework budget exhausted)". Continue.
+
+     c. For each reported bug (up to remaining rework budget):
+        - Generate an `eng-fix-{N}` task where N = next available number
+        - Phase: `engineering`
+        - Dependencies: the same `eng-*` tasks that the qa task depends on
+        - Description: bug description + suggested fix from QA output
+        - Acceptance criteria: "Fix resolves the reported bug" + "original qa task re-passes"
+        - output_files: affected_files from bug report
+        - Add the task to tasks.json
+        - Increment metadata.rework_tasks_created
+
+     d. Add ALL new eng-fix-* task IDs as dependencies of the current qa task
+     e. Reset qa task status to "pending"
+     f. Increment the qa task's `qa_cycle_count`
+     g. Write tasks.json
+     h. The execute loop naturally picks up the eng-fix tasks in the next iteration
+        (they are "ready" since their eng-* deps are already done).
+        After eng-fix tasks complete, the qa task becomes ready again and re-runs.
+
+     **Convergence guarantee:** Each qa task can trigger at most 3 cycles (MAX_QA_CYCLES).
+     Total eng-fix tasks across the project are capped at 8 (MAX_REWORK_TASKS).
+     Worst case: 8 eng-fix executions + 8 qa re-runs = 16 extra iterations, well within MAX_ITERATIONS=50.
 
 TASK_FAILED:
   - retry_count += 1

@@ -67,11 +67,17 @@ The DAG can have just one task. The harness loop still works — it just complet
 Skip the uiux phase entirely. Engineering tasks depend only on architecture tasks.
 
 ### QA finds a critical bug
-If the QA agent determines a fix is non-trivial:
-1. Create a new `eng-fix-*` task with description of the bug and expected fix
-2. Add dependency: the failing `qa-*` task depends on the new `eng-fix-*` task
-3. Set the `qa-*` task back to `pending`
-4. The harness loop will execute the fix, then re-run the QA task
+This is handled **automatically** by step 7b in the Execute Loop:
+
+1. QA agent returns a structured bug report (JSON with `"bugs": [...]`)
+2. The orchestrator auto-creates `eng-fix-*` tasks from the bug reports
+3. The `qa-*` task gets the new eng-fix tasks added as dependencies and resets to `pending`
+4. The harness loop executes the fixes, then re-runs the QA task
+
+**Convergence limits** prevent endless loops:
+- `MAX_QA_CYCLES = 3`: each qa task can trigger at most 3 fix-and-retest cycles
+- `MAX_REWORK_TASKS = 8`: total eng-fix tasks across the project are capped
+- After limits are hit, remaining bugs become "known issues" in the final report
 
 ## Parallel Execution Rules
 

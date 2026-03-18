@@ -100,7 +100,23 @@ Test types by priority:
 
 If you find a bug:
 - Trivial fix (< 5 lines, obvious): fix it in place, note what you fixed
-- Non-trivial fix: do NOT fix it. Instead, add a note to the task:
-  "BUG: [description]. Needs new eng-fix task: [suggested fix approach]"
-  Mark the task as needing attention. The orchestrator will create the fix task.
+- Non-trivial fix: do NOT fix it. Return a structured bug report as JSON in your output:
+
+{
+  "bugs": [
+    {
+      "description": "What is broken and how to reproduce",
+      "affected_files": ["src/foo.py"],
+      "suggested_fix": "Brief description of the fix approach",
+      "severity": "critical"
+    }
+  ]
+}
+
+Severity levels:
+- "critical": feature is fundamentally broken, core flow fails
+- "important": correctness issue that doesn't break the core flow
+
+The orchestrator will parse this JSON and auto-create eng-fix-* tasks.
+If you cannot format as JSON, prefix each bug with BUG: on its own line as fallback.
 ```

@@ -13,7 +13,8 @@
     "updated_at": "ISO 8601 datetime",
     "current_phase": "requirements | architecture | uiux | engineering | qa | complete",
     "telegram_chat_id": "string (optional)",
-    "telegram_bot_token_env": "string (optional, env var name)"
+    "telegram_bot_token_env": "string (optional, env var name)",
+    "rework_tasks_created": "int (default 0, tracks eng-fix tasks created by QA feedback)"
   },
   "tasks": [ ...task objects... ]
 }
@@ -35,6 +36,7 @@
 | `started_at` | string\|null | no | ISO 8601 datetime when execution began |
 | `completed_at` | string\|null | no | ISO 8601 datetime when marked done |
 | `notes` | string\|null | no | Free-form notes about execution |
+| `qa_cycle_count` | int | no | QA feedback cycles triggered (default 0, max 3). Only for qa-phase tasks. |
 
 ## ID Conventions
 

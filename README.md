@@ -14,14 +14,14 @@ A Claude Code skill that orchestrates structured, multi-phase development projec
 │  collect results → update state → repeat              │
 │                                                       │
 │  ┌──────────────────────────────────────────────┐     │
-│  │  Agent Loop (inner — Claude Code built-in)    │    │
-│  │  think → tool → observe → repeat              │    │
+│  │  Agent Loop (inner — Claude Code built-in)   │     │
+│  │  think → tool → observe → repeat             │     │
 │  └──────────────────────────────────────────────┘     │
 │                                                       │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐              │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐               │
 │  │ Subagent │ │ Subagent │ │ Subagent │  (parallel)   │
-│  │ arch-1   │ │ arch-2   │ │ arch-3   │              │
-│  └──────────┘ └──────────┘ └──────────┘              │
+│  │ arch-1   │ │ arch-2   │ │ arch-3   │               │
+│  └──────────┘ └──────────┘ └──────────┘               │
 └───────────────────────────────────────────────────────┘
 ```
 

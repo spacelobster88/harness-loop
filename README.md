@@ -1,26 +1,28 @@
 # harness-loop
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A Claude Code skill that orchestrates structured, multi-phase development projects with parallel execution, progress notifications, and cross-session resume.
 
 ## How It Works
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  Harness Loop (outer — prompt-driven state machine)  │
+┌───────────────────────────────────────────────────────┐
+│  Harness Loop (outer — prompt-driven state machine)   │
 │                                                       │
 │  Read tasks.json → pick ready tasks → dispatch →      │
 │  collect results → update state → repeat              │
 │                                                       │
-│  ┌──────────────────────────────────────────────┐    │
+│  ┌──────────────────────────────────────────────┐     │
 │  │  Agent Loop (inner — Claude Code built-in)    │    │
 │  │  think → tool → observe → repeat              │    │
-│  └──────────────────────────────────────────────┘    │
+│  └──────────────────────────────────────────────┘     │
 │                                                       │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐             │
-│  │ Subagent │ │ Subagent │ │ Subagent │  (parallel)  │
-│  │ arch-1   │ │ arch-2   │ │ arch-3   │             │
-│  └──────────┘ └──────────┘ └──────────┘             │
-└─────────────────────────────────────────────────────┘
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐               │
+│  │ Subagent │ │ Subagent │ │ Subagent │  (parallel)   │
+│  │ arch-1   │ │ arch-2   │ │ arch-3   │               │
+│  └──────────┘ └──────────┘ └──────────┘               │
+└───────────────────────────────────────────────────────┘
 ```
 
 - **Agent Loop (inner)**: Claude Code's built-in think → tool → observe → repeat cycle. Handles one well-scoped task.

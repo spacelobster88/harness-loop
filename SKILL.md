@@ -159,7 +159,7 @@ Then detect the Telegram chat_id (see [Chat ID Detection](#chat-id-detection)) a
 
 Ask the user: **"What would you like to build? Describe the project in as much detail as you can."**
 
-Then ask 3-5 clarifying questions based on their answer. Focus on:
+Then ask 3-5 clarifying questions based on their answer, following the [Grill-Me Protocol](#grill-me-protocol). Focus on:
 - Scope: What's in v1 vs future?
 - Users: Who uses this? What's the primary use case?
 - Tech stack: Any preferences or constraints?
@@ -167,6 +167,27 @@ Then ask 3-5 clarifying questions based on their answer. Focus on:
 - Must-have vs nice-to-have features
 
 Capture all answers in `.harness/requirements.md`. Present a structured summary and ask for approval.
+
+#### Grill-Me Protocol
+
+Whenever this skill asks the user a clarifying or design question — in Step 2
+(Requirements) or Step 2.5 (Design) — it MUST also propose **its own recommended
+answer** to that question. Never ask a bare question. The format is always
+"question → my suggestion → why", so the user can simply confirm ("yes" / "可以")
+or correct one word instead of writing a paragraph.
+
+- Bias the suggestion toward: reliability > features, simplicity > complexity,
+  minimal viable scope.
+- Resolve everything you can yourself with a sensible default; only surface the
+  genuinely **blocking** questions, and state the defaults you chose for the rest.
+- **Auto mode** (the user invoked an explicit auto token — `auto mode` / `automode`
+  / `/auto` / `自动模式`): do NOT wait for the user. **Apply your own suggested
+  answer to every question automatically**, list the assumptions you made, and
+  proceed straight to the plan. This is the "self-grill" variant of the same
+  protocol — same suggestions, no human round-trip.
+
+The Telegram bot surfaces this via the NORMAL / AUTO Phase-1 prompts; this section
+is the source of truth for what those modes mean.
 
 ### Step 2.5: Design Brainstorming
 
